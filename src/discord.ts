@@ -22,12 +22,7 @@ export function startOAuth() {
 
 export default class Discord {
     constructor(app) {
-        async function koss() {
 
-            const users = await app.db.app.findMany()
-            console.log('kos',users);
-        }
-        koss()
         
     }
 }
