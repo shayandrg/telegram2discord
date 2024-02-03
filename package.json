@@ -13,6 +13,7 @@
   "main": "index.js",
   "devDependencies": {
     "@types/node": "^20.11.14",
+    "nodemo": "^1.0.0",
     "prisma": "^5.9.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
