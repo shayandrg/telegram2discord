@@ -2,3 +2,7 @@ node_modules
 package-lock.json
 .env
 dist
+downloads
+.db
+db*
+prisma/migrations
