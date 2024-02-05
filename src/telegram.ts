@@ -18,6 +18,12 @@ export default class Telegram {
             await downloader.download()
             .then(res => {
                 filePath = res.filePath
+                        // await this.app.db.discordUploadQuee.create({
+                        //     data: {
+                        //         fileName: 'file_0.mp4',
+                        //         fileSize: 2653785
+                        //     }
+                        // })
                 console.log(res);
             })
             .catch(err => {
