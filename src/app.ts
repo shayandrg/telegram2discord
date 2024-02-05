@@ -1,3 +1,5 @@
+process.on('uncaughtException', err => console.error('Uncaught Exception:', err))
+
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import Telegram from './telegram'
