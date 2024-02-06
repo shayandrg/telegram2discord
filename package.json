@@ -5,6 +5,7 @@
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.1",
     "nodejs-file-downloader": "^4.12.1",
+    "socks-proxy-agent": "^8.0.2",
     "telegraf": "^4.15.3"
   },
   "name": "telegram2discord",
