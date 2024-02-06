@@ -15,7 +15,14 @@ model App {
 
 model discordUploadQuee {
   id Int @id @default(autoincrement())
-  isUploading Boolean @default(false)
   fileName String
   fileSize Int
+  isUploading Boolean @default(false)
+}
+
+model file {
+  id Int @id @default(autoincrement())
+  fileName String
+  fileSize Int
+  url String
 }
