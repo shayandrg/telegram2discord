@@ -13,7 +13,7 @@ model App {
   value String
 }
 
-model discordUploadQuee {
+model discordUploadQueue {
   id Int @id @default(autoincrement())
   fileName String
   fileSize Int
