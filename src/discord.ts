@@ -1,7 +1,11 @@
 const fs = require('fs')
+import { Client, GatewayIntentBits,Events } from 'discord.js';
 
 export default class Discord {
     app = null
+    isUploading = false
+    bot = null
+    targetChannel = null
     requestHeaders = {
         'host': 'discord.com',
         'Accept': '*/*',
@@ -40,103 +44,127 @@ export default class Discord {
 
     constructor(app) {
         this.app = app
-        this.checkQuee()       
+              
+        this.bot = new Client({ intents: [ GatewayIntentBits.Guilds, 'GuildMessages', 'MessageContent' ] });
+        this.bot.on('ready', () => {
+            console.log(`Logged in as ${this.bot.user.tag}!`);
+            this.targetChannel = this.bot.channels.cache.get(process.env.DISCORD_SEND_CHANNEL_ID);
+            if (!this.targetChannel) {
+                console.error(`Channel with ID ${process.env.DISCORD_SEND_CHANNEL_ID} not found.`);
+                return;
+            }
+        })
+        this.bot.login(process.env.DISCORD_BOT_TOKEN);
+        this.runUploadQueue()       
     }
 
-    async checkQuee() {
-        await this.app.db.discordUploadQuee.findFirst({
+    async runUploadQueue() {
+        await this.app.db.discordUploadQueue.findFirst({
             where: { isUploading: false }
         })
         .then(res => {
             if (res) this.upload(res)
         })
         .catch(err => {
-            console.log('[discord@checkQuee]: ', err?.response)
+            console.log('[discord@runUploadQueue]: ', err?.response)
         })
     }
 
     async upload({ id, fileName, fileSize }) {
-        await this.app.db.discordUploadQuee.update({
-            where: { id },
-            data: {
-                isUploading: true,
-            }
-        })
-
-        let fileBuffer = null
-        try {
-            fileBuffer = fs.readFileSync(`./downloads/${fileName}.mp4`)
-        } catch (err) {
-            console.log('[discord@upload:readFileSync]', err)
-            throw new Error()
-        }
-        
-        const { data: uploadInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/attachments`, {
-            'files': [
-                {
-                    filename: fileName,
-                    file_size: fileSize,
-                    'id': '3',
-                    'is_clip': false
+        if (!this.isUploading) {
+            console.log('start uploading');
+            this.isUploading = true
+            await this.app.db.discordUploadQueue.update({
+                where: { id },
+                data: {
+                    isUploading: true,
                 }
-            ]
-        }, {
-            headers: this.requestHeaders
-        })
-        .catch(err => {
-            console.log('[discord@upload:attachments]', err?.response?.data)
-            throw new Error()
-        })
+            })
 
-        
-        
-        await this.app.axios.put(uploadInfo.attachments[0].upload_url, fileBuffer, {
-            // headers: { ...this.uploadRequestHeaders, 'Content-Length': fileSize }
-            headers: this.uploadRequestHeaders
-        })
-        .catch(err => {
-            console.log('[discord@upload:put]', err)
-            throw new Error()
-        })
-
-        const { data: messageInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/messages`, {
-            'content': '',
-            'nonce': `12038332507456${Math.floor(Math.random()*90000) + 10000}`,
-            'channel_id': process.env.DISCORD_USER_UPLOAD_CHANNEL_ID,
-            'type': 0,
-            'sticker_ids': [],
-            'attachments': [
-                {
-                    'id': '0',
-                    'filename': `${fileName}.mp4`,
-                    'uploaded_filename': uploadInfo.attachments[0].upload_filename                    
-                }
-            ]
-        }, {
-            headers: this.requestHeaders
-        })
-        .catch(err => {
-            console.log('[discord@upload:messages]', err?.response?.data)
-            throw new Error()
-        })
-
-        await this.app.db.file.create({
-            data: {
-                fileName,
-                fileSize,
-                url: messageInfo.attachments[0].url
-            }
-        })
-
-        await this.app.db.discordUploadQuee.delete({
-            where: { id }
-        })
-
-        fs.unlink(`./downloads/${fileName}.mp4`, err => {
-            if (err) {
-                console.log('[discord@upload:unlink]', err)
+            let fileBuffer = null
+            try {
+                fileBuffer = fs.readFileSync(`./downloads/${fileName}`)
+            } catch (err) {
+                console.log('[discord@upload:readFileSync]', err)
                 throw new Error()
             }
+            
+            const { data: uploadInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/attachments`, {
+                'files': [
+                    {
+                        filename: fileName,
+                        file_size: fileSize,
+                        'id': '3',
+                        'is_clip': false
+                    }
+                ]
+            }, {
+                headers: this.requestHeaders
+            })
+            .catch(err => {
+                console.log('[discord@upload:attachments]', err?.response?.data)
+                throw new Error()
+            })
+
+            await this.app.axios.put(uploadInfo.attachments[0].upload_url, fileBuffer, {
+                // headers: { ...this.uploadRequestHeaders, 'Content-Length': fileSize }
+                headers: this.uploadRequestHeaders
+            })
+            .catch(err => {
+                console.log('[discord@upload:put]', err)
+                throw new Error()
+            })
+
+            const { data: messageInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/messages`, {
+                'content': '',
+                'nonce': `12038332507456${Math.floor(Math.random()*90000) + 10000}`,
+                'channel_id': process.env.DISCORD_USER_UPLOAD_CHANNEL_ID,
+                'type': 0,
+                'sticker_ids': [],
+                'attachments': [
+                    {
+                        'id': '0',
+                        'filename': `${fileName}`,
+                        'uploaded_filename': uploadInfo.attachments[0].upload_filename                    
+                    }
+                ]
+            }, {
+                headers: this.requestHeaders
+            })
+            .catch(err => {
+                console.log('[discord@upload:messages]', err?.response?.data)
+                throw new Error()
+            })
+
+            await this.app.db.file.create({
+                data: {
+                    fileName,
+                    fileSize,
+                    url: messageInfo.attachments[0].url
+                }
+            })
+
+            await this.app.db.discordUploadQueue.delete({
+                where: { id }
+            })
+
+            fs.unlink(`./downloads/${fileName}`, err => {
+                if (err) {
+                    console.log('[discord@upload:unlink]', err)
+                    throw new Error()
+                }
+            })
+
+            console.log('finish uploading');
+            this.sendMessageToTargetChannel(messageInfo.attachments[0].url)
+            this.isUploading = false
+            this.runUploadQueue()
+        }
+    }
+
+    async sendMessageToTargetChannel(content) {
+        await this.targetChannel.send(content).then(res => {
+            console.log(res);
         })
     }
 }
