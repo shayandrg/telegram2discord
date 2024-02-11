@@ -4,9 +4,11 @@
     "axios": "^1.6.7",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.1",
+    "input": "^1.0.1",
     "nodejs-file-downloader": "^4.12.1",
     "socks-proxy-agent": "^8.0.2",
-    "telegraf": "^4.15.3"
+    "telegraf": "^4.15.3",
+    "telegram": "^2.19.10"
   },
   "name": "telegram2discord",
   "description": "hello",
