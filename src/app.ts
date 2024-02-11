@@ -18,8 +18,3 @@ const app = {
 
 app.telegram = new Telegram(app)
 app.discord = new Discord(app)
-
-app.telegram.bot.launch()
-
-process.once('SIGINT', () => app.telegram.bot.stop('SIGINT'))
-process.once('SIGTERM', () => app.telegram.bot.stop('SIGTERM'))
