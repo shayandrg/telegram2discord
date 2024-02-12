@@ -1,0 +1,11 @@
+services:
+  node:
+      image: node:18
+      ports:
+          - '10808:10808'
+      volumes:
+          - '.:/srv'
+      working_dir: /srv
+      command: "npm run start"
+# extra_hosts:
+#     - "host.docker.internal:host-gateway"
