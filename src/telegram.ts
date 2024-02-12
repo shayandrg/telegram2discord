@@ -50,12 +50,12 @@ export default class Telegram {
             autoReconnect: true,
             useWSS: false, // Important. Most proxies cannot use SSL.
             proxy: {
-              ip: "127.0.0.1", // Proxy host (IP or hostname)
-              port: Number(process.env.PROXY_PORT), // Proxy port
-              MTProxy: false, // Whether it's an MTProxy or a normal Socks one
-              secret: "00000000000000000000000000000000", // If used MTProxy then you need to provide a secret (or zeros).
-              socksType: 5, // If used Socks you can choose 4 or 5.
-              timeout: 2, // Timeout (in seconds) for connection,
+                ip: "host.docker.internal", // Proxy host (IP or hostname)
+                port: Number(process.env.PROXY_PORT), // Proxy port
+                MTProxy: false, // Whether it's an MTProxy or a normal Socks one
+                secret: "00000000000000000000000000000000", // If used MTProxy then you need to provide a secret (or zeros).
+                socksType: 5, // If used Socks you can choose 4 or 5.
+                timeout: 2, // Timeout (in seconds) for connection,
             },
         })
 
