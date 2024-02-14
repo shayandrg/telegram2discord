@@ -164,7 +164,7 @@ export default class Discord {
 
     async sendMessageToTargetChannel(content) {
         await this.targetChannel.send(content).then(res => {
-            console.log(res);
+            // console.log(res);
         })
     }
 }
