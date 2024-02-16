@@ -42,8 +42,7 @@ export default class Telegram {
     // }
 
     async boot() {
-        const stringSession = new StringSession(process.env.TELEGRAM_CLIENT_SESSION)
-
+        const stringSession = new StringSession(process.env.TELEGRAM_CLIENT_SESSION ?? '')
         this.client = new TelegramClient(stringSession, Number(process.env.TELEGRAM_API_ID), process.env.TELEGRAM_API_HASH, {
             connectionRetries: 2,
             requestRetries: 2,
