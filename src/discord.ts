@@ -171,8 +171,8 @@ export default class Discord {
                 console.log('[discord@upload:attachments]', err?.response?.data)
                 throw new Error()
             })
-
-            await this.app.axios.put(uploadInfo.attachments[0].upload_url, fileBuffer, {
+            const readStream = fs.createReadStream(`./downloads/${fileName}`)
+            await this.app.axios.put(uploadInfo.attachments[0].upload_url, readStream, {
                 // headers: { ...this.uploadRequestHeaders, 'Content-Length': fileSize }
                 headers: this.uploadRequestHeaders
             })
