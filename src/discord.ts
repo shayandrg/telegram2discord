@@ -63,10 +63,22 @@ export default class Discord {
             where: { isUploading: false }
         })
         .then(res => {
-            if (res) this.upload(res)
+            if (res) {
+                this.upload(res)
+            }
         })
         .catch(err => {
             console.log('[discord@runUploadQueue]: ', err?.response)
+        })
+    }
+
+    readFileStream(path) {
+        return new Promise((resolve, reject) => {
+            let chunks = [];
+            const readStream = fs.createReadStream(path)
+            readStream.on('error', err => reject(err))
+            readStream.on('data', chunk => chunks.push(chunk))
+            readStream.on('close', () => resolve(Buffer.concat(chunks)))
         })
     }
 
@@ -80,14 +92,14 @@ export default class Discord {
                     isUploading: true,
                 }
             })
-
+         
             let fileBuffer = null
-            try {
-                fileBuffer = fs.readFileSync(`./downloads/${fileName}`)
-            } catch (err) {
-                console.log('[discord@upload:readFileSync]', err)
+            await this.readFileStream(`./downloads/${fileName}`)
+            .then(res => fileBuffer = res)
+            .catch(err => {
+                console.log('[discord@upload:this.readFileStream]', err)
                 throw new Error()
-            }
+            })
             
             const { data: uploadInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/attachments`, {
                 'files': [
