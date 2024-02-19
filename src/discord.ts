@@ -1,5 +1,4 @@
 const fs = require('fs')
-var msgpack = require("msgpack-lite");
 import { Client, GatewayIntentBits,Events } from 'discord.js';
 
 export default class Discord {
