@@ -1,4 +1,5 @@
 const fs = require('fs')
+var msgpack = require("msgpack-lite");
 import { Client, GatewayIntentBits,Events } from 'discord.js';
 
 export default class Discord {
@@ -72,6 +73,7 @@ export default class Discord {
             }
         })
         .catch(err => {
+            console.log(err);
             console.log('[discord@runUploadQueue]: ', err?.response)
         })
     }
@@ -80,22 +82,59 @@ export default class Discord {
         console.log('start reading');
         
         // return new Promise((resolve, reject) => {
-            let chunks = [];
+            // let chunks = [];
             const readStream = fs.createReadStream(`./downloads/${res.fileName}`)
+            // use the "unsafe" version to avoid clearing 16Mb for nothing
+            let buf = Buffer.allocUnsafe(res.fileSize)
+            let pos = 0
+            readStream.on('data', (chunk) => {
+                buf.fill(chunk, pos, pos + chunk.length)
+                pos += chunk.length
+            })
+            // if (pos != res.fileSize) throw new Error('Ooops! something went wrong.')
+            // console.log(buf);
+            readStream.on('close', () => {
+                // console.log('on close, start buffering');
+                // console.log(chunks);
+                
+                res.fileBuffer = buf
+                // console.log('end buffering');
+                // console.log(chunks);
+                // console.log('buff:', buf);
+                
+                
+                this.upload(res)
+            })
+            
+            // var decodeStream = msgpack.createDecodeStream();
+            // readStream.pipe(decodeStream)
             // readStream.on('error', err => reject(err))
             // readStream.on('data', chunk => chunks.push(chunk))
             // readStream.on('close', () => resolve(Buffer.concat(chunks)))
             // })
-            readStream.on('data', chunk => {
-                console.log('chunk push');
-                chunks.push(chunk)
-            })
-            readStream.on('close', () => {
-                console.log('on close, start buffering');
-                res.fileBuffer = Buffer.concat(chunks)
-                console.log('end buffering');
-                this.upload(res)
-            })
+            // readStream.on('data', chunk => {
+            //     console.log('chunk push');
+            //     chunks.push(chunk)
+            // })
+            // readStream.on('close', () => {
+            //     console.log('on close, start buffering');
+            //     // console.log(chunks);
+                
+            //     // res.fileBuffer = Buffer.concat(chunks)
+            //     console.log('end buffering');
+            //     console.log(chunks);
+                
+            //     // this.upload(res)
+            // })
+
+            // var decodeStream = msgpack.createDecodeStream();
+            // readStream.pipe(decodeStream).on("data", console.warn);
+            // readStream.on('close', () => {
+            //     console.log('on close, start buffering');
+            //     res.fileBuffer = Buffer.concat(chunks)
+            //     console.log('end buffering');
+            //     this.upload(res)
+            // })
     }
 
     async upload({ id, fileName, fileSize, fileBuffer }) {
