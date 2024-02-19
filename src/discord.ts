@@ -64,7 +64,11 @@ export default class Discord {
         })
         .then(res => {
             if (res) {
-                this.upload(res)
+                if (!this.isUploading) {
+                    this.isUploading = true
+                    this.readFileStream(res)
+                    // this.upload(res)
+                }
             }
         })
         .catch(err => {
@@ -72,18 +76,30 @@ export default class Discord {
         })
     }
 
-    readFileStream(path) {
-        return new Promise((resolve, reject) => {
+    readFileStream(res) {
+        console.log('start reading');
+        
+        // return new Promise((resolve, reject) => {
             let chunks = [];
-            const readStream = fs.createReadStream(path)
-            readStream.on('error', err => reject(err))
-            readStream.on('data', chunk => chunks.push(chunk))
-            readStream.on('close', () => resolve(Buffer.concat(chunks)))
-        })
+            const readStream = fs.createReadStream(`./downloads/${res.fileName}`)
+            // readStream.on('error', err => reject(err))
+            // readStream.on('data', chunk => chunks.push(chunk))
+            // readStream.on('close', () => resolve(Buffer.concat(chunks)))
+            // })
+            readStream.on('data', chunk => {
+                console.log('chunk push');
+                chunks.push(chunk)
+            })
+            readStream.on('close', () => {
+                console.log('on close, start buffering');
+                res.fileBuffer = Buffer.concat(chunks)
+                console.log('end buffering');
+                this.upload(res)
+            })
     }
 
-    async upload({ id, fileName, fileSize }) {
-        if (!this.isUploading) {
+    async upload({ id, fileName, fileSize, fileBuffer }) {
+        // if (!this.isUploading) {
             console.log('start uploading');
             this.isUploading = true
             await this.app.db.discordUploadQueue.update({
@@ -93,13 +109,13 @@ export default class Discord {
                 }
             })
          
-            let fileBuffer = null
-            await this.readFileStream(`./downloads/${fileName}`)
-            .then(res => fileBuffer = res)
-            .catch(err => {
-                console.log('[discord@upload:this.readFileStream]', err)
-                throw new Error()
-            })
+            // let fileBuffer = null
+            // await this.readFileStream(`./downloads/${fileName}`)
+            // .then(res => fileBuffer = res)
+            // .catch(err => {
+            //     console.log('[discord@upload:this.readFileStream]', err)
+            //     throw new Error()
+            // })
             
             const { data: uploadInfo } = await this.app.axios.post(`${process.env.DISCORD_API_URL}/channels/${process.env.DISCORD_USER_UPLOAD_CHANNEL_ID}/attachments`, {
                 'files': [
@@ -171,7 +187,7 @@ export default class Discord {
             this.sendMessageToTargetChannel(messageInfo.attachments[0].url)
             this.isUploading = false
             this.runUploadQueue()
-        }
+        // }
     }
 
     async sendMessageToTargetChannel(content) {
